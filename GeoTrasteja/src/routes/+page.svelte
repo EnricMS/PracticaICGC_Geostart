@@ -2,10 +2,16 @@
 const nomProjecte = 'GeoTrasteja';
 const nombreCapes = 3;
 const capa = $state({nom:'Ortofoto', visible: true, opacitat: 100});
+const capes = $state ([
+  {nom: 'Ortofoto', visible: true, opacitat: 100},
+  {nom: 'Geologia', visible: false, opacitat: 70}
+]); 
 
 function alternarVisibilitat () {
   capa.visible = !capa.visible;
 }
+
+capes[1].nom 
 
 </script>
 
@@ -48,3 +54,11 @@ function alternarVisibilitat () {
 <p>{capa.nom}</p>
 
 <button onclick={() => capa.visible = !capa.visible}>Alternar Visibilitat Capes</button>
+
+<!-- <p>{capes[1].nom}</p> -->
+
+{#each capes as capaActual }
+{#if capaActual.visible} Capa visible {:else} Capa oculta{/if}
+<button onclick= {() => {capaActual.visible = !capaActual.visible }}>Alternar Visibilitat</button>
+<p>{capaActual.nom} --- Opacitat: {capaActual.opacitat}%</p>
+  {/each}
