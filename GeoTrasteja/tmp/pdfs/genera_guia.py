@@ -26,14 +26,14 @@ def page(n,t):
     story.append(Paragraph(t,styles['TitleCat']))
 
 page(1,'JavaScript i Svelte, pas a pas')
-p('Guia personal de teoria i exemples a partir de la pràctica de GeoTrasteja. Preparada per a Enric Miralles · 24 d’octubre de 2026.')
+p('Guia personal de teoria i exemples a partir de la pràctica de GeoTrasteja. Preparada per a Enric Miralles · Actualització del 29 d’octubre de 2026.')
 p('Objectiu: entendre què fa cada peça del codi i poder tornar-la a escriure amb autonomia. Els exemples se centren en capes de mapa: nom, visibilitat i opacitat. Encara no hem connectat aquests controls a un mapa real.')
 h('Com llegir aquest quadern')
 p('Dedica un descans a una secció. Abans de mirar l’explicació d’un exemple, intenta anticipar què mostrarà o què passarà en fer clic. No cal memoritzar cada símbol de cop: relaciona’l amb la seva funció.')
 h('Recorregut de lectura')
 for t in ['2. Entorn, terminal i servidor local','3. Anatomia del component i HTML','4. Variables, valors i expressions','5. Estat reactiu i actualització de pantalla','6. Funcions, esdeveniments i funcions fletxa','7. Condicionals: JavaScript i Svelte','8. Opacitat, lliscadors i vinculació','9. Objectes i propietats','10. Arrays i accés per posició','11. Repetir la interfície amb each','12. Exemple integrat de les capes','13. Errors habituals i com llegir-los','14. React, SvelteKit i vocabulari de consulta']:
     p(t)
-p('Abast: conceptes treballats en aquest xat. El lliscador dins de cada fila s’inclou com a exemple de referència del pas que teníem pendent de practicar.')
+p('Ampliació: 15. Accions globals · 16. Comptadors · 17. Arrays de noms · 18. Cerca i retorn · 19. Formularis i textos · 20. Resultat de cerca · 21. Repàs i següent pas. El lliscador per fila ja s’ha practicat. $derived queda pendent.')
 
 page(2,'L’entorn i la terminal')
 p('<b>Node.js</b> permet executar JavaScript fora del navegador. <b>npm</b> gestiona dependències i executa les ordres definides al projecte. Una dependència és un paquet de codi que utilitza el projecte.')
@@ -291,12 +291,169 @@ h('Preguntes per repassar de memòria')
 p('Quina diferència hi ha entre = i ===? Per què no cridem directament la funció a onclick? Què conté capes[1]? On va el if de JavaScript? Què actualitza bind:value? Per què const permet canviar una propietat?')
 p('Material basat en el diàleg i en els exemples treballats. La prioritat és poder explicar cada línia i reconstruir-la, no copiar el fragment complet.')
 
+page(15,'Accions sobre totes les capes')
+p('Un control dins del bloc each actua sobre l’objecte de la seva fila. Un control global, fora del bloc, necessita recórrer l’array per modificar cada objecte.')
+code('''<button onclick={() => {
+  for (const capaActual of capes) {
+    capaActual.visible = false;
+  }
+}}>Amagar totes les capes</button>
+
+<button onclick={() => {
+  for (const capaActual of capes) {
+    capaActual.visible = true;
+    capaActual.opacitat = 100;
+  }
+}}>Restablir totes</button>''')
+p('El for...of recorre els elements. A cada volta, capaActual conté una de les capes. Aquesta variable és local al bucle: no és la mateixa variable que la del each, encara que es diguin igual.')
+h('Per què capes.visible = false no ho fa?')
+p('capes és un array, no un objecte capa. Assignar capes.visible afegiria una propietat a l’array, però no canviaria visible dels objectes que conté. Cal accedir a cada element i modificar-ne la propietat.')
+h('Dues instruccions, un sol cos')
+p('Dins del cos de la funció podem escriure diverses instruccions amb punt i coma. L’operador coma també pot avaluar diverses expressions, però separar les assignacions en instruccions és més clar. No necessitem &amp;&amp; per executar-les seguides.')
+p('El botó Restablir de cada fila va dins del each i fora del if que amaga el lliscador: així continua disponible quan la capa està oculta. El botó Restablir totes va fora del each per no repetir-lo a cada fila.')
+
+page(16,'Comptar sense modificar')
+p('Una funció de consulta llegeix les dades i retorna un resultat. Per comptar, inicialitzem un acumulador numèric a zero, recorrem l’array i l’incrementem quan es compleix la condició.')
+code('''function comptarCapesVisibles(capes) {
+  let i = 0;
+  for (const capaActual of capes) {
+    if (capaActual.visible === true) {
+      i++;
+    }
+  }
+  return i;
+}
+
+function comptarCapesPerceptibles(capes) {
+  let i = 0;
+  for (const capaActual of capes) {
+    if (capaActual.visible && capaActual.opacitat > 0) {
+      i++;
+    }
+  }
+  return i;
+}''')
+p('<b>i++</b> incrementa i en una unitat. let i; començaria amb undefined i no serviria per al recompte. El return va després del bucle perquè necessitem revisar totes les capes.')
+code('''<p>Capes visibles: {comptarCapesVisibles(capes)}</p>
+<p>Perceptibles: {comptarCapesPerceptibles(capes)}</p>''')
+p('Les crides de la plantilla llegeixen estat reactiu a través de les funcions. El recompte es pot actualitzar quan canvia la visibilitat o, en el segon cas, l’opacitat. Les funcions no han de modificar l’estat mentre calculen el resultat.')
+h('Visible i perceptible no són el mateix')
+p('Amb Ortofoto visible a opacitat 0 i Geologia visible a 70: <b>2 visibles, 1 perceptible</b>. Si amaguem Geologia: <b>1 visible, 0 perceptibles</b>. Si després pugem Ortofoto a 30: <b>1 visible, 1 perceptible</b>. Aquí visible és la propietat d’activació del nostre model.')
+
+page(17,'Construir un array de noms')
+p('El patró del comptador també permet acumular dades en un array. Ara el resultat no serà un número, sinó una llista de textos.')
+code('''function obtenirNomCapesPerceptibles(capes) {
+  const capesVisibles = [];
+  for (const capaActual of capes) {
+    if (capaActual.visible && capaActual.opacitat > 0) {
+      capesVisibles.push(capaActual.nom);
+    }
+  }
+  return capesVisibles;
+}''')
+p('Conservem el nom de funció utilitzat al projecte; obtenirNomsCapesPerceptibles seria més precís perquè retorna diversos noms. capesVisibles conté textos, no objectes: nomsPerceptibles seria també un nom més descriptiu per a aquest array local.')
+h('El destinatari de push')
+p('<b>arrayDestinatari.push(valor)</b> afegeix el valor a l’array. capaActual.nom és un text i no és on hem de cridar push. const impedeix reassignar l’array, però permet afegir-hi elements.')
+code('''{#each obtenirNomCapesPerceptibles(capes) as nomCapa}
+  <p>Capa perceptible: {nomCapa}</p>
+{:else}
+  <p>No hi ha cap capa perceptible</p>
+{/each}''')
+p('La funció <b>retorna un array</b>; no es converteix en un array. each recorre aquest resultat. nomCapa rep cada text, no l’índex. No cal assignar-li valors manualment dins del bloc.')
+p('Si retorna ["Ortofoto", "Geologia"], es creen dos paràgrafs. Si retorna [], s’executa la branca else del each. Aquesta branca correspon a una llista buida, no a una condició falsa de cada element.')
+
+page(18,'Cercar i retornar un objecte')
+code('''function buscarCapaNom(capes, nomBuscat) {
+  for (const nomCerca of capes) {
+    if (nomBuscat === nomCerca.nom) {
+      return nomCerca;
+    }
+  }
+  return null;
+}''')
+p('capes i nomBuscat són <b>paràmetres</b>. Quan cridem buscarCapaNom(capes, "Geologia"), passem arguments concrets. nomCerca conté un objecte capa, encara que el seu nom pugui fer pensar que és un text; capaActual seria més descriptiu.')
+p('Comparem el text buscat amb la propietat nom. Comparar nomBuscat amb l’objecte complet no comprova el seu nom. nom i Nom són propietats diferents.')
+h('Retorn anticipat')
+p('return nomCerca acaba tota la funció en trobar una coincidència. return null va després del bucle. Si el poséssim a l’else de la primera comparació, buscar Geologia s’aturaria en veure que Ortofoto no coincideix. Sense un retorn final explícit, la funció retornaria undefined quan no troba res.')
+code('''const capaTrobada = buscarCapaNom(capes, 'Geologia');
+if (capaTrobada !== null) {
+  console.log(capaTrobada.opacitat);
+}''')
+p('Retornem l’objecte complet, que ja inclou opacitat. No cal posar l’opacitat a zero ni retornar-la per separat. <b>return objecte, numero</b> utilitza l’operador coma i retorna només l’última expressió, no dos resultats.')
+h('Identitat i abast')
+p('L’objecte retornat és el mateix element que hi ha a l’array; no n’hem creat una còpia. nomCerca només existeix dins del bucle de la funció: la plantilla no pot utilitzar aquesta variable local. Ha d’utilitzar el resultat retornat.')
+
+page(19,'Escriure i normalitzar textos')
+code('''// Dins del script:
+let nomBuscat = $state('');
+
+<!-- A la plantilla: -->
+<input type="text" bind:value={nomBuscat} />
+<p>Estàs buscant: {nomBuscat}</p>''')
+p('bind:value reassigna nomBuscat quan escrivim: per això el text reactiu necessita let. Amb const no podem reassignar-lo. És diferent de modificar una propietat d’un objecte declarat amb const.')
+h('Dos mètodes de string')
+code("'GEOLOGIA'.toLowerCase() // 'geologia'\n' Geologia '.trim()    // 'Geologia'\n' Geo logia '.trim()   // 'Geo logia'")
+p('<b>toLowerCase()</b> retorna el text en minúscules. <b>trim()</b> elimina espais dels extrems, no els interiors. Cap dels dos modifica el string original. Els parèntesis executen el mètode: sense (), toLowerCase fa referència a la funció, no al resultat.')
+code('''function buscarCapaNom(capes, nomBuscat) {
+  for (const nomCerca of capes) {
+    if (nomBuscat.toLowerCase().trim() ===
+        nomCerca.nom.toLowerCase()) {
+      return nomCerca;
+    }
+  }
+  return null;
+}''')
+p('Convertim els dos costats a minúscules i netegem els extrems de l’entrada. Així " GEOLOGIA " troba Geologia. No elimina accents ni espais interiors; tampoc fa una cerca parcial.')
+p('Per detectar una entrada buida o només amb espais, comprovem <b>nomBuscat.trim() === \'\'</b>. En canvi, \'\'.trim() continua sent buit i no neteja el que ha escrit l’usuari.')
+
+page(20,'Mostrar el resultat de la cerca')
+code('''<div>
+  <p>Cerca:</p>
+  <input type="text" bind:value={nomBuscat} />
+  <p>Estàs buscant: {nomBuscat}</p>
+
+  {#if nomBuscat.trim() === ''}
+    <p>Escriu el nom d'una capa</p>
+  {:else if buscarCapaNom(capes, nomBuscat) !== null}
+    <p>Capa trobada</p>
+
+    {#if buscarCapaNom(capes, nomBuscat).visible}
+      <p>Capa visible</p>
+    {:else}
+      <p>Capa oculta</p>
+    {/if}
+
+    <p>Opacitat de la capa:
+      {buscarCapaNom(capes, nomBuscat).opacitat}%
+    </p>
+  {:else}
+    <p>No s'ha trobat cap capa</p>
+  {/if}
+</div>''')
+p('L’ordre importa: primer tractem l’entrada buida, després una coincidència i, al final, l’absència de coincidències. else sempre va al final. Dins d’un else if no afegim unes altres claus al voltant de la variable.')
+p('<b>!== null</b> comprova que hi ha un objecte. No comparem el resultat amb nomBuscat: un objecte no és el mateix que el text d’entrada. Accedim a les propietats només dins de la branca on la cerca ha trobat una capa.')
+p('Quan cerquem Geologia i en modifiquem l’opacitat amb el lliscador, el resultat també canvia. La cerca llegeix les dades reactives actuals i retorna el mateix objecte de l’array.')
+p('Aquesta versió repeteix la cerca en diverses expressions. És la versió treballada fins ara; el següent pas serà representar el resultat amb un valor derivat, sense repetir totes aquestes crides.')
+
+page(21,'Repàs i punt de continuació')
+h('Què hem incorporat des del primer quadern')
+p('Accions globals amb for...of; comptadors; condicions amb &amp;&amp;; acumulació de noms amb push; each sobre el resultat d’una funció; else per a l’array buit; cerca amb retorn d’objecte o null; abast de variables; entrada de text amb bind; comparacions, normalització i condicionals imbricats.')
+h('Comprova-ho abans de mirar la resposta')
+p('1. Una capa visible amb opacitat 0: compta com a perceptible? 2. Què fa push i sobre quin valor es crida? 3. Per què return null no va a l’else del bucle de cerca? 4. Què retorna trim en un text amb espais interiors? 5. Per què nomCerca no està disponible a la plantilla? 6. Per què nomBuscat es declara amb let?')
+h('Respostes breus')
+p('1. No; sí que compta com a visible. 2. Afegeix un element al final de l’array destinatari. 3. Hem de revisar totes les capes abans de descartar la cerca. 4. Conserva els espais interiors. 5. Té abast local al bucle de la funció. 6. La vinculació reassigna el text amb cada entrada.')
+h('Un petit recorregut de comprovació')
+p('Cerca " GEOLOGIA "; canvia’n l’opacitat; amaga-la; deixa una altra capa activada amb opacitat 0; comprova els dos comptadors i la llista de noms; escriu un nom inexistent; buida l’entrada amb espais. Cada control ha de consultar i modificar les dades que li corresponen.')
+h('Següent tema: $derived, encara pendent')
+p('Partirem de la cerca existent per aprendre a expressar un resultat que depèn de l’estat. L’objectiu serà disposar d’una capa trobada que s’actualitzi quan canviï l’entrada i simplificar la plantilla. Encara no s’ha explicat ni practicat la seva sintaxi en aquest quadern.')
+p('Després queden mètodes d’arrays com find, filter i map; components i propietats; i dades asíncrones amb async/await i fetch. Aquest és el recorregut proposat, no contingut que ja s’hagi treballat. El botó d’alternar la capa trobada també havia quedat com a exercici pendent.')
+
 def footer(canvas, doc):
     canvas.setStrokeColor(colors.HexColor('#b8d1d7'))
     canvas.line(42,43,553,43)
     canvas.setFont('Body',8)
     canvas.setFillColor(colors.HexColor('#46616b'))
-    canvas.drawString(42,29,'GeoTrasteja · Guia de repàs · 24/10/2026')
+    canvas.drawString(42,29,'GeoTrasteja · Guia de repàs · Actualitzat el 29/10/2026')
     canvas.drawRightString(553,29,str(doc.page))
 doc=SimpleDocTemplate(str(OUT),pagesize=(595.28,841.89),rightMargin=42,leftMargin=42,topMargin=38,bottomMargin=57,title='GeoTrasteja - Guia de repàs de JavaScript i Svelte',author='Material personal de repàs per a Enric Miralles')
 doc.build(story,onFirstPage=footer,onLaterPages=footer)
