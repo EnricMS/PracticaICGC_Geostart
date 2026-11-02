@@ -8,7 +8,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / 'output/pdf/GeoTrasteja_guia_de_repas.pdf'
+OUT = ROOT / 'output/pdf/GeoTrasteja_guia_de_repas_2026-10-31.pdf'
 for name, file in [('Body','arial.ttf'),('Bold','arialbd.ttf'),('Code','consola.ttf')]:
     pdfmetrics.registerFont(TTFont(name, 'C:/Windows/Fonts/'+file))
 styles = getSampleStyleSheet()
@@ -26,14 +26,14 @@ def page(n,t):
     story.append(Paragraph(t,styles['TitleCat']))
 
 page(1,'JavaScript i Svelte, pas a pas')
-p('Guia personal de teoria i exemples a partir de la pràctica de GeoTrasteja. Preparada per a Enric Miralles · Actualització del 29 d’octubre de 2026.')
+p('Guia personal de teoria i exemples a partir de la pràctica de GeoTrasteja. Preparada per a Enric Miralles · Actualització del 31 d’octubre de 2026.')
 p('Objectiu: entendre què fa cada peça del codi i poder tornar-la a escriure amb autonomia. Els exemples se centren en capes de mapa: nom, visibilitat i opacitat. Encara no hem connectat aquests controls a un mapa real.')
 h('Com llegir aquest quadern')
 p('Dedica un descans a una secció. Abans de mirar l’explicació d’un exemple, intenta anticipar què mostrarà o què passarà en fer clic. No cal memoritzar cada símbol de cop: relaciona’l amb la seva funció.')
 h('Recorregut de lectura')
 for t in ['2. Entorn, terminal i servidor local','3. Anatomia del component i HTML','4. Variables, valors i expressions','5. Estat reactiu i actualització de pantalla','6. Funcions, esdeveniments i funcions fletxa','7. Condicionals: JavaScript i Svelte','8. Opacitat, lliscadors i vinculació','9. Objectes i propietats','10. Arrays i accés per posició','11. Repetir la interfície amb each','12. Exemple integrat de les capes','13. Errors habituals i com llegir-los','14. React, SvelteKit i vocabulari de consulta']:
     p(t)
-p('Ampliació: 15. Accions globals · 16. Comptadors · 17. Arrays de noms · 18. Cerca i retorn · 19. Formularis i textos · 20. Resultat de cerca · 21. Repàs i següent pas. El lliscador per fila ja s’ha practicat. $derived queda pendent.')
+p('Ampliació: 15-21. Accions globals, comptadors, noms, cerca i formularis. 22. Neteja del component. 23. $derived. 24. find. 25. filter. 26. map. 27-28. Integració. 29. Repàs. Els exemples anteriors es conserven com a etapes d’aprenentatge; no s’han d’acumular tots al component.')
 
 page(2,'L’entorn i la terminal')
 p('<b>Node.js</b> permet executar JavaScript fora del navegador. <b>npm</b> gestiona dependències i executa les ordres definides al projecte. Una dependència és un paquet de codi que utilitza el projecte.')
@@ -444,16 +444,187 @@ h('Respostes breus')
 p('1. No; sí que compta com a visible. 2. Afegeix un element al final de l’array destinatari. 3. Hem de revisar totes les capes abans de descartar la cerca. 4. Conserva els espais interiors. 5. Té abast local al bucle de la funció. 6. La vinculació reassigna el text amb cada entrada.')
 h('Un petit recorregut de comprovació')
 p('Cerca " GEOLOGIA "; canvia’n l’opacitat; amaga-la; deixa una altra capa activada amb opacitat 0; comprova els dos comptadors i la llista de noms; escriu un nom inexistent; buida l’entrada amb espais. Cada control ha de consultar i modificar les dades que li corresponen.')
-h('Següent tema: $derived, encara pendent')
-p('Partirem de la cerca existent per aprendre a expressar un resultat que depèn de l’estat. L’objectiu serà disposar d’una capa trobada que s’actualitzi quan canviï l’entrada i simplificar la plantilla. Encara no s’ha explicat ni practicat la seva sintaxi en aquest quadern.')
-p('Després queden mètodes d’arrays com find, filter i map; components i propietats; i dades asíncrones amb async/await i fetch. Aquest és el recorregut proposat, no contingut que ja s’hagi treballat. El botó d’alternar la capa trobada també havia quedat com a exercici pendent.')
+h('Continuació en aquesta edició')
+p('Les pàgines següents incorporen $derived i els mètodes find, filter i map, que ja hem introduït i practicat. Les funcions amb bucles de les pàgines anteriors es conserven per entendre la seva equivalència amb aquestes alternatives.')
+p('Encara queden components i propietats, i dades asíncrones amb async/await i fetch. El canvi del each perquè recorri nomsPerceptibles és el punt exacte pendent de pràctica; la nova versió s’inclou al final com a referència.')
+
+page(22,'Netejar abans de continuar')
+p('Els exemples de cada etapa no s’han d’acumular indefinidament. Vam acabar amb un objecte capa independent, un array capes, controls duplicats i dues declaracions de capaTrobada. La neteja va deixar un únic array com a font de dades.')
+h('Una font de dades, diversos resultats')
+code("const nomProjecte = 'GeoTrasteja';\nconst capes = $state([\n  { nom: 'Ortofoto', visible: true, opacitat: 100 },\n  { nom: 'Geologia', visible: true, opacitat: 100 }\n]);\nlet nomBuscat = $state('');")
+p('Les dues capes comencen ara visibles i amb opacitat 100. visible i opacitat continuen sent propietats independents. El total de capes es mostra amb capes.length, no amb un número fix.')
+h('Declaracions que no podem duplicar')
+p('No podem declarar let capaTrobada i const capaTrobada en el mateix àmbit. L’exemple antic de cerca fixa de Geologia es va eliminar en introduir el resultat derivat de la cerca de l’usuari.')
+p('En substituir un fragment, cal conservar nomProjecte i capes al principi del script. Els valors derivats necessiten les dades originals. Si eliminem una funció, també hem d’eliminar o substituir totes les crides que encara la utilitzen.')
+h('Noms coherents amb la plantilla')
+p('Si la plantilla consulta capaTrobada, guardar el resultat amb el nom capa no la connecta automàticament. Si mostra capesVisibles.length, hem de declarar capesVisibles. Els noms han de coincidir exactament.')
+p('Quan un resultat ja es calcula amb find o filter i no queden crides a la funció anterior, podem retirar la funció antiga. Els bucles continuen sent útils per entendre i explicar el procés.')
+
+page(23,'$derived: un resultat que depèn de dades')
+p('<b>$state</b> declara les dades reactives que modifiquem. <b>$derived</b> expressa un càlcul a partir de dades reactives i manté el resultat coherent amb les dependències que consulta.')
+code('''let nomBuscat = $state('');
+let capaTrobada = $derived(buscarCapaNom(capes, nomBuscat));''')
+p('La cerca continua sent una funció. $derived en utilitza el resultat: un objecte capa o null en aquesta versió amb buscarCapaNom. Si escrivim Geologia, el resultat és el seu objecte; si escrivim Ortofoto, passa a ser l’objecte d’Ortofoto.')
+h('Per què una assignació ordinària no és equivalent?')
+code('''// Càlcul executat en inicialitzar aquesta variable:
+let resultat = buscarCapaNom(capes, nomBuscat);
+
+// Resultat derivat de les dades reactives consultades:
+let resultatReactiu = $derived(buscarCapaNom(capes, nomBuscat));''')
+p('Svelte segueix les lectures reactives síncrones durant el càlcul, també dins de les funcions cridades. Quan una dependència canvia, invalida el resultat i el recalcula quan es torna a consultar. No vol dir que es recalculi per qualsevol canvi de tota l’aplicació.')
+h('Consultar el resultat pel seu nom')
+code('''{:else if capaTrobada !== null}
+  <p>{capaTrobada.nom}</p>
+  <p>Opacitat: {capaTrobada.opacitat}%</p>''')
+p('Evitem repetir la cerca en cada expressió. El símbol % és text de la plantilla: no canvia el número de la propietat. Podem aplicar el mateix patró a un recompte amb $derived(comptarCapesVisibles(capes)).')
+p('El càlcul derivat ha de consultar dades sense modificar estat. En aquesta pràctica el tractem com un resultat calculat; les accions de l’usuari modifiquen les dades originals amb $state.')
+
+page(24,'find: trobar un element')
+p('<b>find()</b> recorre l’array i retorna el primer element per al qual la funció de comprovació dona un valor cert. Si no el troba, retorna <b>undefined</b>.')
+code("const capa = capes.find(\n  capaActual => capaActual.nom === 'Geologia'\n);")
+p('capaActual és un paràmetre que rep un objecte cada vegada. Posar-li el nom nom no faria que rebés un text: el contingut depèn dels elements de l’array. Per obtenir-ne el text del nom, accedim a .nom.')
+h('Funció de comprovació')
+code("capaActual => capaActual.nom === 'Geologia'")
+p('La funció fletxa retorna directament el booleà de la comparació. No cal if. Si afegim claus al cos i volem aquest resultat, hem d’escriure return: amb el cos d’expressió el retorn és implícit.')
+code('''let capaTrobada = $derived(
+  capes.find(capaActual =>
+    capaActual.nom.toLowerCase() ===
+    nomBuscat.toLowerCase().trim()
+  )
+);''')
+p('Aquesta declaració substitueix el derived que cridava buscarCapaNom. No l’afegim com una segona declaració amb el mateix nom. Conserva el comportament de cerca exacta, ignorant majúscules i espais als extrems de l’entrada.')
+h('Canvia el cas de resultat absent')
+p('La nostra funció retornava null; find retorna undefined. Per això la plantilla ha de comprovar <b>capaTrobada !== undefined</b>. undefined és el nom exacte, no undefinied. El resultat trobat és l’objecte complet, no només el nom.')
+
+page(25,'filter: seleccionar diversos elements')
+p('<b>filter()</b> crea un nou array amb tots els elements que compleixen la comprovació. Si no n’hi ha cap, retorna <b>[]</b>. No retorna undefined ni un recompte.')
+code('''let capesVisibles = $derived(
+  capes.filter(capaActual => capaActual.visible)
+);
+
+let capesPerceptibles = $derived(
+  capes.filter(capaActual =>
+    capaActual.visible && capaActual.opacitat > 0
+  )
+);''')
+p('capaActual.visible i capaActual.visible === true són equivalents per als booleans del nostre model. La condició de perceptibilitat exigeix les dues propietats amb &amp;&amp;. El plural del nom recorda que el resultat és una llista.')
+h('Comptar el resultat')
+code('''<p>Capes visibles: {capesVisibles.length}</p>
+<p>Capes perceptibles: {capesPerceptibles.length}</p>''')
+p('length és la quantitat d’elements de l’array. Mostrar {capesVisibles} no és el mateix que mostrar-ne la longitud. CapesVisibles amb majúscula inicial seria una altra variable.')
+h('Dos errors que hem corregit')
+p('<b>capes.filter(capaActual =&gt; capes.visible)</b> consulta l’array, no l’objecte actual. La propietat s’ha de llegir des de capaActual. <b>... =&gt; if (...)</b> no és una expressió vàlida: podem retornar directament la condició.')
+p('filter no modifica l’array original: crea un nou array que conté referències als objectes seleccionats. No fa còpies independents de cada capa. $derived en manté la selecció actualitzada quan canvien les dades que consulta.')
+
+page(26,'map: transformar cada element')
+p('<b>map()</b> crea un nou array amb el resultat de transformar cada element. En el nostre cas, transformem objectes capa en textos amb els seus noms.')
+code('''let nomsPerceptibles = $derived(
+  capesPerceptibles.map(capaActual => capaActual.nom)
+);''')
+p('capesPerceptibles ja conté només els objectes perceptibles. map retorna la propietat nom de cadascun: per exemple, ["Ortofoto", "Geologia"]. El resultat té un element per cada element de l’array d’entrada.')
+h('No cal push ni un comptador')
+p('En la funció anterior creàvem un array buit i hi fèiem push dins del bucle. map ja crea l’array de resultats. La funció fletxa decideix quin valor hi va a cada posició; aquí és capaActual.nom.')
+code('''// Expressió de transformació:
+capesPerceptibles.map(capaActual => capaActual.nom)
+
+// Guardar un resultat calculat una vegada:
+const noms = capesPerceptibles.map(capaActual => capaActual.nom);''')
+p('No escrivim const capesPerceptibles.map(...): const necessita un nom de variable i una assignació. Per mantenir aquesta transformació reactiva al component, fem servir la declaració amb $derived de dalt.')
+h('Canvi de la plantilla: següent exercici pendent')
+code('''{#each nomsPerceptibles as nomCapa}
+  <p>Capa perceptible: {nomCapa}</p>
+{:else}
+  <p>No hi ha cap capa perceptible</p>
+{/each}''')
+p('Aquesta és la substitució de referència del bloc que encara cridava obtenirNomCapesPerceptibles(capes). El punt pendent de pràctica és fer aquest canvi, provar-lo i retirar la funció antiga si ja no s’utilitza.')
+
+page(27,'Les dades i els resultats, junts')
+p('Aquesta és la nova base de referència del script. Conserva les dades originals i declara els resultats una sola vegada. La funció de noms anterior deixa de ser necessària quan la plantilla ja utilitza nomsPerceptibles.')
+code('''<script>
+  const nomProjecte = 'GeoTrasteja';
+  const capes = $state([
+    { nom: 'Ortofoto', visible: true, opacitat: 100 },
+    { nom: 'Geologia', visible: true, opacitat: 100 }
+  ]);
+
+  let nomBuscat = $state('');
+
+  let capaTrobada = $derived(
+    capes.find(capaActual =>
+      capaActual.nom.toLowerCase() ===
+      nomBuscat.toLowerCase().trim()
+    )
+  );
+
+  let capesVisibles = $derived(
+    capes.filter(capaActual => capaActual.visible)
+  );
+
+  let capesPerceptibles = $derived(
+    capes.filter(capaActual =>
+      capaActual.visible && capaActual.opacitat > 0
+    )
+  );
+
+  let nomsPerceptibles = $derived(
+    capesPerceptibles.map(capaActual => capaActual.nom)
+  );
+</script>''')
+p('<b>Cadena de dependències:</b> capes alimenta el filtre; capesPerceptibles alimenta map; nomsPerceptibles alimenta each. Els controls continuen modificant les propietats dels objectes de capes, com abans.')
+
+page(28,'La plantilla amb els resultats derivats')
+p('Fragments de referència del resum i del cercador. Els botons globals, els controls per capa i els lliscadors es mantenen com ja els havíem construït; no cal reescriure’ls per utilitzar aquests resultats.')
+code('''<h2>Resum</h2>
+<p>Total de capes: {capes.length}</p>
+<p>Capes visibles: {capesVisibles.length}</p>
+<p>Capes perceptibles: {capesPerceptibles.length}</p>
+
+{#each nomsPerceptibles as nomCapa}
+  <p>Capa perceptible: {nomCapa}</p>
+{:else}
+  <p>No hi ha cap capa perceptible</p>
+{/each}
+
+<h2>Cercador de capes</h2>
+<label>
+  Nom de la capa:
+  <input type="text" bind:value={nomBuscat} />
+</label>
+
+{#if nomBuscat.trim() === ''}
+  <p>Escriu el nom d'una capa</p>
+{:else if capaTrobada !== undefined}
+  <p>Capa trobada: {capaTrobada.nom}</p>
+  {#if capaTrobada.visible}
+    <p>Capa visible</p>
+  {:else}
+    <p>Capa oculta</p>
+  {/if}
+  <p>Opacitat: {capaTrobada.opacitat}%</p>
+{:else}
+  <p>No s'ha trobat cap capa</p>
+{/if}''')
+p('El if protegeix l’accés a les propietats quan find no ha trobat cap objecte. Aquests fragments corresponen a la versió amb find: no s’hi ha de conservar la comprovació antiga de null.')
+
+page(29,'Triar el mètode i explicar el resultat')
+h('Quina pregunta vols respondre?')
+p('<b>find:</b> quin és el primer element que compleix això? Retorna un element o undefined. <b>filter:</b> quins elements ho compleixen? Retorna un array amb zero o més elements. <b>map:</b> en què vull transformar cada element? Retorna un array de resultats de la mateixa longitud.')
+p('La funció que passem a un mètode s’anomena també callback: el mètode la crida per als elements. No és un tipus nou de funció; aquí la definim amb una funció fletxa.')
+h('Exercicis mentals amb dues capes')
+p('1. Ortofoto visible a 0 i Geologia visible a 100: quina longitud tenen els dos filtres? 2. Quin resultat produeix map sobre les perceptibles? 3. Què dona find si busquem Relleu? 4. Si amaguem totes, què mostra el each dels noms? 5. Quina diferència hi ha entre capaTrobada i capaTrobada.nom?')
+h('Respostes')
+p('1. capesVisibles.length és 2 i capesPerceptibles.length és 1. 2. ["Geologia"]. 3. undefined. 4. El missatge alternatiu perquè l’array és buit. 5. El primer és un objecte o undefined; la propietat nom, quan existeix la capa, és un text.')
+h('Comprovar la migració')
+p('Conserva nomProjecte i capes. Declara cada resultat una vegada. Fes coincidir els noms del script i la plantilla. Amb find comprova undefined. No retiris una funció mentre encara hi hagi crides. Prova entrada buida, nom inexistent, majúscules, espais i canvis de visibilitat i opacitat.')
+h('On reprendrem la pràctica')
+p('Ja has escrit correctament el derived de nomsPerceptibles amb map. Falta canviar el each perquè recorri aquesta variable, comprovar el comportament i netejar les funcions que hagin quedat sense ús. Després continuarem amb components i propietats, sense donar-los encara per treballats.')
 
 def footer(canvas, doc):
     canvas.setStrokeColor(colors.HexColor('#b8d1d7'))
     canvas.line(42,43,553,43)
     canvas.setFont('Body',8)
     canvas.setFillColor(colors.HexColor('#46616b'))
-    canvas.drawString(42,29,'GeoTrasteja · Guia de repàs · Actualitzat el 29/10/2026')
+    canvas.drawString(42,29,'GeoTrasteja · Guia de repàs · Actualitzat el 31/10/2026')
     canvas.drawRightString(553,29,str(doc.page))
 doc=SimpleDocTemplate(str(OUT),pagesize=(595.28,841.89),rightMargin=42,leftMargin=42,topMargin=38,bottomMargin=57,title='GeoTrasteja - Guia de repàs de JavaScript i Svelte',author='Material personal de repàs per a Enric Miralles')
 doc.build(story,onFirstPage=footer,onLaterPages=footer)

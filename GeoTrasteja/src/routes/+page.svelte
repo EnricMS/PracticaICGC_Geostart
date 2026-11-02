@@ -7,6 +7,8 @@ const capes = $state([
 	{ nom: 'Geologia', visible: true, opacitat: 100 }
 ]);
 
+let nomsPerceptibles = $derived(capesPerceptibles.map(capaActual => capaActual.nom));
+
 let nomBuscat = $state('');
 
 let capaTrobada = $derived(
