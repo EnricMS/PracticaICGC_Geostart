@@ -1,0 +1,17 @@
+[
+  {
+    "nom": "Ortofoto",
+    "visible": true,
+    "opacitat": 100
+  },
+  {
+    "nom": "Geologia",
+    "visible": true,
+    "opacitat": 100
+  },
+  {
+    "nom": "Relleu",
+    "visible": true,
+    "opacitat": 100
+  }
+]

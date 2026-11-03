@@ -1,32 +1,28 @@
 <script>
+	import ResumCapes from '#lib/components/ResumCapes.svelte';
 
-const nomProjecte = 'GeoTrasteja';
+	const nomProjecte = 'GeoTrasteja';
 
-const capes = $state([
-	{ nom: 'Ortofoto', visible: true, opacitat: 100 },
-	{ nom: 'Geologia', visible: true, opacitat: 100 }
-]);
+	const capes = $state([
+		{ nom: 'Ortofoto', visible: true, opacitat: 100 },
+		{ nom: 'Geologia', visible: true, opacitat: 100 },
+		{ nom: 'Relleu', visible: true, opacitat: 100 }
+	]);
 
-let nomsPerceptibles = $derived(capesPerceptibles.map(capaActual => capaActual.nom));
+	let nomsPerceptibles = $derived(capesPerceptibles.map((capaActual) => capaActual.nom));
 
-let nomBuscat = $state('');
+	let nomBuscat = $state('');
 
-let capaTrobada = $derived(
-	capes.find(capaActual =>
-		capaActual.nom.toLowerCase() === nomBuscat.toLowerCase().trim()
-	)
-);
+	let capaTrobada = $derived(
+		capes.find((capaActual) => capaActual.nom.toLowerCase() === nomBuscat.toLowerCase().trim())
+	);
 
-let capesVisibles = $derived(
-	capes.filter(capaActual => capaActual.visible)
-);
+	let capesVisibles = $derived(capes.filter((capaActual) => capaActual.visible));
 
-let capesPerceptibles = $derived(
-	capes.filter(capaActual =>
-		capaActual.visible && capaActual.opacitat > 0
-	)
-);
-	
+	let capesPerceptibles = $derived(
+		capes.filter((capaActual) => capaActual.visible && capaActual.opacitat > 0)
+	);
+
 	function comptarCapesVisibles(capes) {
 		let i = 0;
 
@@ -63,15 +59,21 @@ let capesPerceptibles = $derived(
 		return nomsPerceptibles;
 	}
 
-
+	async function provarCarregaCapes() {
+		const resposta = await fetch('/capes.json');
+		const dades = await resposta.json();
+		console.log(dades);
+	}
 </script>
 
 <h1>{nomProjecte}</h1>
 
 <p>
-	Pràctica per consolidar coneixements de Svelte, llibreries de mapes
-	i desenvolupament frontend i backend.
+	Pràctica per consolidar coneixements de Svelte, llibreries de mapes i desenvolupament frontend i
+	backend.
 </p>
+
+<button onclick={provarCarregaCapes}>Provar carrega</button>
 
 <h2>Controls de les capes</h2>
 
@@ -104,13 +106,7 @@ let capesPerceptibles = $derived(
 		{#if capaActual.visible}
 			<label>
 				Opacitat de {capaActual.nom}
-				<input
-					type="range"
-					min="0"
-					max="100"
-					step="10"
-					bind:value={capaActual.opacitat}
-				/>
+				<input type="range" min="0" max="100" step="10" bind:value={capaActual.opacitat} />
 			</label>
 		{/if}
 	</div>
@@ -149,17 +145,12 @@ let capesPerceptibles = $derived(
 	Restablir totes
 </button>
 
-<h2>Resum</h2>
-
-<p>Total de capes: {capes.length}</p>
-<p>Capes visibles: {capesVisibles.length}</p>
-<p>Capes perceptibles: {capesPerceptibles.length}</p>
-
-{#each obtenirNomCapesPerceptibles(capes) as nomCapa}
-	<p>Capa perceptible: {nomCapa}</p>
-{:else}
-	<p>No hi ha cap capa perceptible</p>
-{/each}
+<ResumCapes
+	totalCapes={capes.length}
+	totalVisibles={capesVisibles.length}
+	totalPerceptibles={capesPerceptibles.length}
+	{nomsPerceptibles}
+/>
 
 <h2>Cercador de capes</h2>
 
