@@ -3,15 +3,15 @@
 
 	const nomProjecte = 'GeoTrasteja';
 
-	const capes = $state([
-		{ nom: 'Ortofoto', visible: true, opacitat: 100 },
-		{ nom: 'Geologia', visible: true, opacitat: 100 },
-		{ nom: 'Relleu', visible: true, opacitat: 100 }
-	]);
+	let capes = $state([]);
 
 	let nomsPerceptibles = $derived(capesPerceptibles.map((capaActual) => capaActual.nom));
 
+	let missatgeError = $state('');
+
 	let nomBuscat = $state('');
+
+	let carregant = $state(false);
 
 	let capaTrobada = $derived(
 		capes.find((capaActual) => capaActual.nom.toLowerCase() === nomBuscat.toLowerCase().trim())
@@ -60,8 +60,19 @@
 	}
 
 	async function provarCarregaCapes() {
+		carregant = true;
 		const resposta = await fetch('/capes.json');
+
+		if (!resposta.ok) {
+			carregant = false;
+			missatgeError = 'No s’han pogut carregar les capes';
+			console.error('No s’han pogut carregar les capes:', resposta.status);
+			return;
+		}
+
 		const dades = await resposta.json();
+		capes = dades;
+		carregant = false;
 		console.log(dades);
 	}
 </script>
@@ -73,7 +84,15 @@
 	backend.
 </p>
 
-<button onclick={provarCarregaCapes}>Provar carrega</button>
+<button onclick={provarCarregaCapes} disabled={carregant}>Provar carrega</button>
+
+{#if (carregant===true)}
+	<p>Carregant capes...</p>
+{/if}
+
+{#if missatgeError !== ''}
+	<p>{missatgeError}</p>
+{/if}
 
 <h2>Controls de les capes</h2>
 

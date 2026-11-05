@@ -6,7 +6,7 @@
 
 <h2>Resum de les capes</h2>
 
-{#if totalPerceptibles === totalCapes}
+{#if totalPerceptibles === totalCapes && totalCapes > 0}
 Totes les capes són perceptibles
 {/if}
 
