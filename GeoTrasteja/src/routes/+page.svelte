@@ -7,6 +7,8 @@
 
 	let nomsPerceptibles = $derived(capesPerceptibles.map((capaActual) => capaActual.nom));
 
+	let dadesCarregades = $state(false);
+
 	let missatgeError = $state('');
 
 	let nomBuscat = $state('');
@@ -61,19 +63,51 @@
 
 	async function provarCarregaCapes() {
 		carregant = true;
-		const resposta = await fetch('/capes.json');
+		missatgeError = '';
 
-		if (!resposta.ok) {
+		try {
+			const resposta = await fetch('/capes.json');
+
+			if (!resposta.ok) {
+				missatgeError = 'No s’han pogut carregar les capes';
+				console.error('Error HTTP:', resposta.status);
+				return;
+			}
+
+			const dades = await resposta.json();
+			if (!Array.isArray(dades)) {
+				missatgeError = 'Les dades rebudes no són una llista de capes';
+				return;
+			}
+			for (const capaActual of dades) {
+				if (capaActual === null || typeof capaActual !== 'object' || Array.isArray(capaActual)) {
+					missatgeError = 'Una entrada de la llista no és un objecte capa';
+					return;
+				} else if (typeof capaActual.nom !== 'string') {
+					missatgeError = 'Una capa no té un nom de text';
+					return;
+				} else if (capaActual.nom.trim() === '') {
+					missatgeError = 'El nom conté un text buit';
+					return;
+				} else if (typeof capaActual.visible !== 'boolean') {
+					missatgeError = 'La visibilitat de la capa no es un booleà';
+					return;
+				} else if (typeof capaActual.opacitat !== 'number') {
+					missatgeError = 'L’opacitat d’una capa no és un número';
+					return;
+				} else if (capaActual.opacitat > 100 || capaActual.opacitat < 0) {
+					missatgeError = 'L’opacitat d’una capa no és un número comprés entre 0 i 100';
+					return;
+				}
+			}
+			capes = dades;
+			dadesCarregades = true;
+		} catch (error) {
+			missatgeError = 'Error de connexió o de lectura de les dades';
+			console.error(error);
+		} finally {
 			carregant = false;
-			missatgeError = 'No s’han pogut carregar les capes';
-			console.error('No s’han pogut carregar les capes:', resposta.status);
-			return;
 		}
-
-		const dades = await resposta.json();
-		capes = dades;
-		carregant = false;
-		console.log(dades);
 	}
 </script>
 
@@ -86,7 +120,13 @@
 
 <button onclick={provarCarregaCapes} disabled={carregant}>Provar carrega</button>
 
-{#if (carregant===true)}
+{#if !dadesCarregades && !carregant}
+	<p>Encara no s’han carregat les dades</p>
+{:else if dadesCarregades && capes.length === 0}
+	<p>La llista carregada és buida</p>
+{/if}
+
+{#if carregant === true}
 	<p>Carregant capes...</p>
 {/if}
 

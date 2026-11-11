@@ -8,7 +8,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / 'output/pdf/GeoTrasteja_guia_de_repas_2026-10-31.pdf'
+OUT = ROOT / 'output/pdf/GeoTrasteja_guia_de_repas_2026-11-07.pdf'
 for name, file in [('Body','arial.ttf'),('Bold','arialbd.ttf'),('Code','consola.ttf')]:
     pdfmetrics.registerFont(TTFont(name, 'C:/Windows/Fonts/'+file))
 styles = getSampleStyleSheet()
@@ -26,14 +26,14 @@ def page(n,t):
     story.append(Paragraph(t,styles['TitleCat']))
 
 page(1,'JavaScript i Svelte, pas a pas')
-p('Guia personal de teoria i exemples a partir de la pràctica de GeoTrasteja. Preparada per a Enric Miralles · Actualització del 31 d’octubre de 2026.')
+p('Guia personal de teoria i exemples a partir de la pràctica de GeoTrasteja. Preparada per a Enric Miralles · Actualització del 7 de novembre de 2026.')
 p('Objectiu: entendre què fa cada peça del codi i poder tornar-la a escriure amb autonomia. Els exemples se centren en capes de mapa: nom, visibilitat i opacitat. Encara no hem connectat aquests controls a un mapa real.')
 h('Com llegir aquest quadern')
 p('Dedica un descans a una secció. Abans de mirar l’explicació d’un exemple, intenta anticipar què mostrarà o què passarà en fer clic. No cal memoritzar cada símbol de cop: relaciona’l amb la seva funció.')
 h('Recorregut de lectura')
 for t in ['2. Entorn, terminal i servidor local','3. Anatomia del component i HTML','4. Variables, valors i expressions','5. Estat reactiu i actualització de pantalla','6. Funcions, esdeveniments i funcions fletxa','7. Condicionals: JavaScript i Svelte','8. Opacitat, lliscadors i vinculació','9. Objectes i propietats','10. Arrays i accés per posició','11. Repetir la interfície amb each','12. Exemple integrat de les capes','13. Errors habituals i com llegir-los','14. React, SvelteKit i vocabulari de consulta']:
     p(t)
-p('Ampliació: 15-21. Accions globals, comptadors, noms, cerca i formularis. 22. Neteja del component. 23. $derived. 24. find. 25. filter. 26. map. 27-28. Integració. 29. Repàs. Els exemples anteriors es conserven com a etapes d’aprenentatge; no s’han d’acumular tots al component.')
+p('Ampliacions: 15-21. Accions globals, comptadors i cerca. 22-29. $derived, find, filter i map. 30-32. Organització i components. 33-35. JSON, HTTP i fetch. 36-37. Errors i estats. 38-41. Validació i càrrega integrada. 42-43. Missatges, proves i repàs. Els exemples antics es conserven com a etapes, no per acumular-los al component.')
 
 page(2,'L’entorn i la terminal')
 p('<b>Node.js</b> permet executar JavaScript fora del navegador. <b>npm</b> gestiona dependències i executa les ordres definides al projecte. Una dependència és un paquet de codi que utilitza el projecte.')
@@ -617,14 +617,343 @@ p('1. capesVisibles.length és 2 i capesPerceptibles.length és 1. 2. ["Geologia
 h('Comprovar la migració')
 p('Conserva nomProjecte i capes. Declara cada resultat una vegada. Fes coincidir els noms del script i la plantilla. Amb find comprova undefined. No retiris una funció mentre encara hi hagi crides. Prova entrada buida, nom inexistent, majúscules, espais i canvis de visibilitat i opacitat.')
 h('On reprendrem la pràctica')
-p('Ja has escrit correctament el derived de nomsPerceptibles amb map. Falta canviar el each perquè recorri aquesta variable, comprovar el comportament i netejar les funcions que hagin quedat sense ús. Després continuarem amb components i propietats, sense donar-los encara per treballats.')
+p('En aquesta edició ja hem continuat: el resum és un component amb propietats i les dades es carreguen des d’un JSON amb validació i gestió d’errors. Les pàgines següents incorporen aquest treball i indiquen el nou punt de continuació.')
+
+page(30,'Com s’organitza GeoTrasteja')
+p('La pàgina té una font principal de dades: capes. Els botons i lliscadors en modifiquen els objectes. Els valors derivats consulten aquest estat i la plantilla en mostra els resultats.')
+code('''capes: array d’objectes de les capes
+  -> capesVisibles: array d’objectes filtrats
+  -> capesPerceptibles: array d’objectes filtrats
+       -> nomsPerceptibles: array de textos
+
+nomBuscat + capes -> capaTrobada: objecte o undefined''')
+p('capaActual és un nom temporal dins de cada bucle o callback, no una variable global que emmagatzemi totes les capes. Al each de capes representa un objecte; al each de nomsPerceptibles, nomCapa representa un text.')
+h('Fitxers amb responsabilitats diferents')
+p('<b>src/routes/+page.svelte:</b> estat, càrrega, validació, resultats derivats i controls. <b>src/lib/components/ResumCapes.svelte:</b> mostra els recomptes i els noms que rep. <b>static/capes.json:</b> dades inicials servides com a recurs estàtic.')
+p('Els controls de pantalla modifiquen l’estat en memòria, no el fitxer JSON. Tornar a carregar correctament el fitxer substitueix capes pels seus valors, i pot restablir canvis fets amb els controls.')
+h('Condicions del resum')
+code('''{#if totalCapes > 0 && totalPerceptibles === totalCapes}
+  <p>Totes les capes són perceptibles</p>
+{/if}
+
+{#if totalVisibles < totalCapes}
+  <p>Hi ha capes amagades</p>
+{/if}''')
+p('Amb 3 visibles i 2 perceptibles no hi ha necessàriament cap capa amagada: una pot tenir opacitat 0. Per dir que totes són perceptibles, exigim també que existeixi almenys una capa, perquè 0 === 0 és cert.')
+
+page(31,'Components, imports i propietats')
+p('Un component separat no accedeix automàticament a les variables de la pàgina. Les <b>props</b> són dades d’entrada que li passa el component pare. totalCapes és un nom escollit per nosaltres, no una paraula especial de Svelte.')
+code('''// Dins del script de +page.svelte:
+import ResumCapes from '#lib/components/ResumCapes.svelte';
+
+<!-- A la plantilla de la pàgina: -->
+<ResumCapes
+  totalCapes={capes.length}
+  totalVisibles={capesVisibles.length}
+  totalPerceptibles={capesPerceptibles.length}
+  {nomsPerceptibles}
+/>''')
+p('El projecte ha indicat que el seu àlies és <b>#lib</b>, que apunta a src/lib. L’exemple anterior amb $lib no funcionava en aquest entorn; fem servir l’àlies que ha indicat el compilador. Una ruta relativa des de routes seria ../lib/components/ResumCapes.svelte.')
+p('import dona un nom al component importat i &lt;ResumCapes /&gt; el mostra en aquell punt. {nomsPerceptibles} és una abreviatura de nomsPerceptibles={nomsPerceptibles}.')
+h('Rebre les props en el component')
+code('''<script>
+  let {
+    totalCapes,
+    totalVisibles,
+    totalPerceptibles,
+    nomsPerceptibles
+  } = $props();
+</script>''')
+p('$props() rep les dades d’entrada; les claus extreuen les propietats pel seu nom. Es fa una sola crida a $props() per component. Els noms han de coincidir amb els de la crida: totalVisibbles no és totalVisibles.')
+p('Els tres totals són números: la pàgina ja ha calculat .length. nomsPerceptibles és un array de textos. No fem totalCapes.length, perquè el total no és un array.')
+
+page(32,'El component de resum complet')
+code('''<script>
+  let {
+    totalCapes, totalVisibles,
+    totalPerceptibles, nomsPerceptibles
+  } = $props();
+</script>
+
+<h2>Resum de les capes</h2>
+
+{#if totalCapes > 0 && totalPerceptibles === totalCapes}
+  <p>Totes les capes són perceptibles</p>
+{/if}
+
+<p>Total de capes: {totalCapes}</p>
+<p>Total de capes visibles: {totalVisibles}</p>
+<p>Total de capes perceptibles: {totalPerceptibles}</p>
+
+{#each nomsPerceptibles as nomCapa}
+  <p>Capa perceptible: {nomCapa}</p>
+{:else}
+  <p>No hi ha cap capa perceptible</p>
+{/each}
+
+{#if totalVisibles < totalCapes}
+  <p>Hi ha capes amagades</p>
+{/if}''')
+p('El resum rep resultats ja calculats, no l’array complet de capes. Si afegim Relleu a les dades, la pàgina recalcula i el component rep els nous valors sense haver-ne de canviar el codi.')
+p('Vam retirar els paràgrafs i la llista duplicats de la pàgina quan els vam traslladar al component. Cal moure, no copiar indefinidament. El each ara recorre nomsPerceptibles, no crida l’antiga funció que rebia capes.')
+p('Amb Ortofoto, Geologia i Relleu visibles a 100 hi ha 3 visibles i 3 perceptibles. Si posem Relleu a 0, continuen sent 3 visibles però passen a 2 perceptibles.')
+
+page(33,'JSON: dades, sense declaracions')
+p('<b>JSON</b> és un format de text per representar dades. No hi escrivim const, let, funcions ni $state. Els noms de propietats i els strings utilitzen cometes dobles; números i booleans, no.')
+code('''[
+  {
+    "nom": "Ortofoto",
+    "visible": true,
+    "opacitat": 100
+  },
+  {
+    "nom": "Geologia",
+    "visible": true,
+    "opacitat": 100
+  },
+  {
+    "nom": "Relleu",
+    "visible": true,
+    "opacitat": 100
+  }
+]''')
+p('Les claus agrupen cada objecte. Les comes separen propietats i objectes; no posem una coma després de l’últim element. Els dos punts van fora de les cometes: "nom": "Ortofoto".')
+p('Desem aquest text a <b>static/capes.json</b>. Amb el servidor local, es consulta a <b>/capes.json</b>, sense /static. La carpeta static no forma part del camí públic: el seu contingut es serveix des de l’arrel de l’aplicació.')
+p('Veure aquest recurs al navegador comprova que existeix i és accessible. Encara no significa que l’estat capes del component l’hagi llegit: això ho programem amb fetch.')
+
+page(34,'HTTP, endpoint i API')
+p('El navegador és un client que fa una petició HTTP al servidor. <b>GET</b> és el mètode habitual per demanar un recurs. La resposta conté un estat, capçaleres i un cos amb el contingut.')
+p('Un <b>endpoint</b> és un punt concret on el client pot fer una petició. Una <b>API</b> defineix la interfície de comunicació: operacions disponibles, entrades i respostes. Pot tenir un endpoint o diversos.')
+h('El nostre recurs és estàtic')
+p('GET /capes.json és un punt d’accés a dades, però en aquesta pràctica en diem recurs estàtic: el servidor retorna el fitxer que hem desat. Encara no hem escrit una funció de servidor pròpia per preparar la resposta.')
+p('Un futur GET /api/capes podria executar codi de servidor que llegeixi dades, filtri o retorni errors. Tots dos recursos podrien retornar el mateix JSON. /api és una convenció del camí, no el que crea una API.')
+h('Resposta i contingut no són el mateix')
+code('''const resposta = await fetch('/capes.json');
+const dades = await resposta.json();''')
+p('<b>resposta</b> és l’objecte HTTP retornat per fetch. <b>dades</b> és el resultat d’interpretar el cos com a JSON; en el nostre fitxer és un array d’objectes. La constant dades no conté una funció: conté el resultat de cridar .json().')
+p('L’extensió .json de l’adreça no converteix automàticament el contingut en dades JavaScript. resposta.json() no demana al servidor que canviï el format; llegeix i interpreta la resposta rebuda. resposta.text() la llegiria com a text i resposta.blob() com a dades de tipus Blob.')
+p('json() retorna l’estructura que hi hagi al document: també podria ser un objecte, un número o null. Per això més endavant validem que sigui un array de capes.')
+
+page(35,'async, await i la primera prova')
+code('''async function provarCarregaCapes() {
+  const resposta = await fetch('/capes.json');
+  const dades = await resposta.json();
+  console.log(dades);
+}
+
+<!-- A la plantilla: -->
+<button onclick={provarCarregaCapes}>Provar càrrega</button>''')
+p('<b>async</b> permet utilitzar await en aquesta funció i fa que la funció retorni una promesa. Una <b>promesa</b> representa un resultat que pot arribar més endavant o fallar. <b>await</b> espera aquest resultat dins de la funció sense bloquejar tota la interfície.')
+p('El primer await espera la resposta HTTP. El segon espera la lectura i interpretació del cos. Són dos passos i produeixen dos valors diferents; separar-los ens permet revisar l’estat HTTP abans de llegir el JSON.')
+h('Veure el resultat al navegador')
+p('console.log(dades) apareix a la pestanya Console de les eines de desenvolupament del navegador quan cliquem el botó. Un resultat com (3) [{...}, {...}, {...}] es pot desplegar. Els avisos d’altres scripts no són necessàriament la sortida de la nostra funció.')
+h('Connectar-lo als controls')
+code('''// Estat inicial, fora de la funció:
+let capes = $state([]);
+
+// Després de llegir i validar les dades:
+capes = dades;''')
+p('Fem servir let perquè reassignem l’array complet. La primera versió amb const permetia modificar propietats però no substituir capes. No declarem capes dues vegades: substituïm la declaració antiga.')
+p('La constant local dades guarda el resultat de la lectura. L’assignació capes = dades connecta aquest resultat amb l’estat que utilitzen els controls, els derived i el component. Llegim l’assignació de dreta a esquerra.')
+
+page(36,'Errors HTTP i excepcions')
+code('''const resposta = await fetch('/capes.json');
+
+if (!resposta.ok) {
+  missatgeError = 'No s’han pogut carregar les capes';
+  console.error('Error HTTP:', resposta.status);
+  return;
+}''')
+p('fetch no rebutja automàticament una resposta 404. resposta.ok indica si l’estat és dins del rang d’èxit 200-299. resposta.status dona el codi. ! nega el booleà; return acaba la funció abans de llegir el cos com a JSON.')
+h('try, catch i finally')
+code('''try {
+  // Petició, comprovacions i lectura.
+} catch (error) {
+  // Error de xarxa o interpretació del JSON.
+} finally {
+  // Finalització tant en cas d’èxit com d’error.
+}''')
+p('Si la xarxa falla, fetch pot rebutjar la promesa. Si arriba una resposta correcta però el JSON està mal format, és resposta.json() el que falla. Tots dos errors arriben al catch d’aquesta funció.')
+p('Un return dins del try també passa pel finally abans de sortir. Això permet posar carregant = false en un sol lloc, inclosos els errors HTTP i els retorns de validació. Aquesta explicació es refereix al flux normal de la funció, no a tancar el navegador a mitja execució.')
+p('console.error mostra informació a la consola per al desenvolupador. missatgeError guarda un text reactiu que podem mostrar a l’usuari. Són dues responsabilitats diferents.')
+
+page(37,'Estats de càrrega i error')
+code('''let capes = $state([]);
+let carregant = $state(false);
+let missatgeError = $state('');
+let dadesCarregades = $state(false);''')
+p('<b>carregant:</b> hi ha una petició en curs. <b>missatgeError:</b> text de l’últim error d’aquest intent. <b>dadesCarregades:</b> hi ha hagut almenys una càrrega correcta en aquesta instància de la pàgina. <b>capes:</b> última llista acceptada.')
+code('''<button onclick={provarCarregaCapes} disabled={carregant}>
+  Provar càrrega
+</button>
+
+{#if carregant}
+  <p>Carregant capes...</p>
+{/if}
+
+{#if missatgeError !== ''}
+  <p>{missatgeError}</p>
+{/if}''')
+p('disabled rep un booleà: desactiva el botó durant la càrrega. Al principi de la funció posem carregant a true i buidem missatgeError per netejar un error anterior. El finally torna carregant a false.')
+p('Un fitxer local pot carregar molt ràpid; el missatge pot durar tan poc que no el percebem. Cal distingir el comportament de l’estat del temps que triga la petició.')
+p('No reiniciem dadesCarregades al principi de cada intent: recorda si ja tenim una càrrega correcta. Si una recàrrega falla, conservem les dades acceptades anteriorment i mostrem el nou error.')
+
+page(38,'Validar la forma de les dades')
+p('Interpretar JSON i validar dades són passos diferents. Un document pot ser JSON vàlid i, tot i així, no tenir l’estructura que necessita el nostre programa.')
+code('''const dades = await resposta.json();
+
+if (!Array.isArray(dades)) {
+  missatgeError = 'Les dades rebudes no són una llista de capes';
+  return;
+}''')
+p('<b>Array.isArray(dades)</b> retorna un booleà. És una comprovació de JavaScript, no un mètode de resposta. Un objecte aïllat amb nom, visible i opacitat es rebutja aquí perquè esperem una llista.')
+h('Protegir cada entrada abans de consultar propietats')
+code('''for (const capaActual of dades) {
+  if (
+    capaActual === null ||
+    typeof capaActual !== 'object' ||
+    Array.isArray(capaActual)
+  ) {
+    missatgeError = 'Una entrada no és un objecte capa';
+    return;
+  }
+  // Després comprovem les seves propietats.
+}''')
+p('typeof s’escriu davant del valor, no com una propietat .typeof. Rebutgem null perquè no podem accedir a null.nom; typeof null dona object, de manera que necessita la comprovació explícita. Els arrays també tenen typeof object, per això els descartem amb Array.isArray.')
+p('|| expressa que n’hi ha prou amb una causa d’invalidesa. L’ordre de validació protegeix els accessos següents i ens permet mostrar un missatge concret, en lloc de caure en un error genèric de lectura.')
+
+page(39,'Validar propietats, tipus i rangs')
+code('''if (typeof capaActual.nom !== 'string') {
+  missatgeError = 'Una capa no té un nom de text';
+  return;
+} else if (capaActual.nom.trim() === '') {
+  missatgeError = 'El nom conté un text buit';
+  return;
+} else if (typeof capaActual.visible !== 'boolean') {
+  missatgeError = 'La visibilitat no és un booleà';
+  return;
+} else if (typeof capaActual.opacitat !== 'number') {
+  missatgeError = 'L’opacitat no és un número';
+  return;
+} else if (capaActual.opacitat > 100 || capaActual.opacitat < 0) {
+  missatgeError = 'L’opacitat ha d’estar entre 0 i 100';
+  return;
+}''')
+p('Primer exigim que el nom sigui string; només després podem fer trim. Un nom amb espais és text, però el rebutgem si queda buit en retallar els extrems. La comprovació no reescriu ni normalitza el nom desat.')
+p('"true" és text; true és booleà. "100" és text; 100 és número. El tipus correcte encara no garanteix el rang correcte: 120 és un número, però queda fora de 0 a 100. Els extrems 0 i 100 estan permesos.')
+h('Acceptar la llista sencera')
+p('capes = dades va després de totes les validacions i fora del bucle. Si una capa és incorrecta, return acaba tota la càrrega i capes conserva el valor anterior. No acceptem la primera capa i després rebutgem només la segona: la substitució és conjunta.')
+p('És una validació bàsica per al nostre fitxer: no és un esquema universal. Per exemple, encara no comprovem noms duplicats ni totes les particularitats dels números en altres orígens de dades.')
+
+page(40,'Càrrega integrada: primera part')
+p('Referència completa en dues pàgines. Les declaracions d’estat de la pàgina 37 van fora de la funció. El bucle d’aquesta pàgina continua amb les comprovacions de propietats de la pàgina següent.')
+code('''async function provarCarregaCapes() {
+  carregant = true;
+  missatgeError = '';
+
+  try {
+    const resposta = await fetch('/capes.json');
+
+    if (!resposta.ok) {
+      missatgeError = 'No s’han pogut carregar les capes';
+      console.error('Error HTTP:', resposta.status);
+      return;
+    }
+
+    const dades = await resposta.json();
+
+    if (!Array.isArray(dades)) {
+      missatgeError = 'Les dades rebudes no són una llista de capes';
+      return;
+    }
+
+    for (const capaActual of dades) {
+      if (
+        capaActual === null ||
+        typeof capaActual !== 'object' ||
+        Array.isArray(capaActual)
+      ) {
+        missatgeError = 'Una entrada no és un objecte capa';
+        return;
+      }
+
+      // Continua amb les validacions de la pàgina següent.''')
+p('Les claus obertes continuen expressament a la pàgina 41. No enganxis aquesta primera meitat tota sola com si fos una funció completa.')
+
+page(41,'Càrrega integrada: continuació')
+code('''      if (typeof capaActual.nom !== 'string') {
+        missatgeError = 'Una capa no té un nom de text';
+        return;
+      } else if (capaActual.nom.trim() === '') {
+        missatgeError = 'El nom conté un text buit';
+        return;
+      } else if (typeof capaActual.visible !== 'boolean') {
+        missatgeError = 'La visibilitat no és un booleà';
+        return;
+      } else if (typeof capaActual.opacitat !== 'number') {
+        missatgeError = 'L’opacitat no és un número';
+        return;
+      } else if (
+        capaActual.opacitat > 100 || capaActual.opacitat < 0
+      ) {
+        missatgeError = 'L’opacitat ha d’estar entre 0 i 100';
+        return;
+      }
+    }
+
+    capes = dades;
+    dadesCarregades = true;
+  } catch (error) {
+    missatgeError = 'Error de connexió o de lectura de les dades';
+    console.error(error);
+  } finally {
+    carregant = false;
+  }
+}''')
+p('dadesCarregades = true és imprescindible: assignar dades a capes no modifica automàticament aquest altre booleà. Vam detectar aquest oblit perquè el missatge inicial continuava apareixent després de carregar correctament.')
+p('Si dades és [], el bucle no fa cap volta i la llista es considera vàlida. S’assigna l’array buit i es registra una càrrega correcta, cosa diferent de no haver carregat mai.')
+
+page(42,'Mai carregat o llista buida?')
+code('''<button onclick={provarCarregaCapes} disabled={carregant}>
+  Provar càrrega
+</button>
+
+{#if !dadesCarregades && !carregant}
+  <p>Encara no s’han carregat les dades</p>
+{:else if dadesCarregades && capes.length === 0}
+  <p>La llista carregada és buida</p>
+{/if}
+
+{#if carregant}
+  <p>Carregant capes...</p>
+{/if}
+
+{#if missatgeError !== ''}
+  <p>{missatgeError}</p>
+{/if}''')
+p('Amb capes = [] tot sol no sabem si falta carregar o si el resultat vàlid és buit. dadesCarregades aporta aquesta informació. Abans del primer èxit és false; després d’un èxit és true, encara que la llista no tingui elements.')
+p('Aquesta és la versió treballada. Els blocs són independents: abans del primer èxit pot aparèixer el missatge inicial juntament amb un error. Si ja hi havia una llista buida acceptada i recarreguem, el text de llista buida pot coexistir amb Carregant. La llista continua sent l’últim resultat correcte.')
+p('El resum rep recomptes zero quan l’array és buit i mostra que no hi ha capes perceptibles. La condició totalCapes > 0 evita afirmar que totes són perceptibles abans de tenir capes.')
+
+page(43,'Proves i repàs per aquesta nit')
+h('Casos que hem comprovat')
+p('<b>Fitxer correcte:</b> carrega tres capes i actualitza controls i resum. <b>Ruta inexistent:</b> resposta 404, missatge HTTP i botó actiu al final. <b>JSON mal format:</b> error de lectura al catch. <b>Objecte en lloc d’array:</b> missatge de llista incorrecta.')
+p('<b>Nom numèric o buit:</b> rebutjat. <b>visible com a text:</b> rebutjat. <b>Opacitat fora del rang:</b> rebutjada. <b>Entrada null:</b> rebutjada abans d’accedir a propietats. <b>[]:</b> càrrega correcta amb llista buida. Després de cada prova recuperem les dades vàlides.')
+h('Explica el recorregut sense mirar el codi')
+p('Clic -> carregant true i error buit -> fetch -> estat HTTP -> lectura JSON -> validació d’array -> validació de cada capa -> assignació a capes -> dadesCarregades true -> finally -> carregant false. Si es produeix una excepció dins del try, catch prepara el missatge abans del finally.')
+h('Sis preguntes de repàs')
+p('1. Què rep ResumCapes? 2. Què diferencia resposta de dades? 3. Un 404 entra automàticament al catch? 4. S’executa finally després d’un return dins del try? 5. Per què typeof precedeix trim? 6. Què passa si la segona capa és invàlida?')
+h('Respostes breus')
+p('1. Tres números i un array de noms. 2. L’objecte HTTP i el contingut interpretat. 3. No; revisem resposta.ok. 4. Sí. 5. Hem de comprovar que el valor és text abans de cridar un mètode de text. 6. Retornem abans d’assignar i conservem capes anterior.')
+h('Punt exacte de continuació')
+p('La càrrega, la validació i els missatges han funcionat en les proves. Queda l’exercici curt al resum: mostrar quantes capes estan amagades amb les propietats que ja rep el component, sense cap funció ni prop nova. Després continuarem la preparació del mapa. Encara no hem connectat MapLibre ni programat un endpoint propi en GeoTrasteja.')
 
 def footer(canvas, doc):
     canvas.setStrokeColor(colors.HexColor('#b8d1d7'))
     canvas.line(42,43,553,43)
     canvas.setFont('Body',8)
     canvas.setFillColor(colors.HexColor('#46616b'))
-    canvas.drawString(42,29,'GeoTrasteja · Guia de repàs · Actualitzat el 31/10/2026')
+    canvas.drawString(42,29,'GeoTrasteja · Guia de repàs · Actualitzat el 07/11/2026')
     canvas.drawRightString(553,29,str(doc.page))
 doc=SimpleDocTemplate(str(OUT),pagesize=(595.28,841.89),rightMargin=42,leftMargin=42,topMargin=38,bottomMargin=57,title='GeoTrasteja - Guia de repàs de JavaScript i Svelte',author='Material personal de repàs per a Enric Miralles')
 doc.build(story,onFirstPage=footer,onLaterPages=footer)
