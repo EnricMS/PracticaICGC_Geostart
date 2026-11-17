@@ -1,9 +1,11 @@
 <script>
 	import ResumCapes from '#lib/components/ResumCapes.svelte';
+	import MapaJapo from '#lib/components/MapaJapo.svelte';
 
 	const nomProjecte = 'GeoTrasteja';
 
 	let capes = $state([]);
+	let localitzacions = $state([]);
 
 	let nomsPerceptibles = $derived(capesPerceptibles.map((capaActual) => capaActual.nom));
 
@@ -109,6 +111,12 @@
 			carregant = false;
 		}
 	}
+
+	async function carregarLocalitzacions() {
+		const resposta = await fetch('/localitzacions.json');
+		const dades = await resposta.json();
+		localitzacions = dades;
+	}
 </script>
 
 <h1>{nomProjecte}</h1>
@@ -118,7 +126,8 @@
 	backend.
 </p>
 
-<button onclick={provarCarregaCapes} disabled={carregant}>Provar carrega</button>
+<button onclick={provarCarregaCapes} disabled={carregant}>Provar carrega capes</button>
+<button onclick={carregarLocalitzacions}>Provar carrega localitzacions {localitzacions.length}</button>
 
 {#if !dadesCarregades && !carregant}
 	<p>Encara no s’han carregat les dades</p>
@@ -133,6 +142,8 @@
 {#if missatgeError !== ''}
 	<p>{missatgeError}</p>
 {/if}
+
+<MapaJapo />
 
 <h2>Controls de les capes</h2>
 

@@ -1,0 +1,41 @@
+
+[
+  {
+    "nom": "Tòquio",
+    "visible": true,
+    "centre": [139.76, 35.68],
+    "zoom": 10
+  },
+  {
+    "nom": "Osaka",
+    "visible": true,
+    "centre": [135.50, 34.69],
+    "zoom": 10
+  },
+  {
+    "nom": "Kioto",
+    "visible": true,
+    "centre": [135.75, 35.02],
+    "zoom": 11
+  },
+  {
+    "nom": "Sapporo",
+    "visible": true,
+    "centre": [141.35, 43.07],
+    "zoom": 10
+  },
+  {
+    "nom": "Fukuoka",
+    "visible": true,
+    "centre": [130.42, 33.60],
+    "zoom": 10
+  },
+  {
+    "nom": "Naha",
+    "visible": true,
+    "centre": [127.68, 26.21],
+    "zoom": 11
+  }
+]
+
+

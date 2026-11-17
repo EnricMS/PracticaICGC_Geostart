@@ -23,3 +23,6 @@ Totes les capes són perceptibles
 {#if totalVisibles < totalCapes}
 <p>Hi ha capes amagades</p>
 {/if}
+
+<p>Capes amagades: {totalCapes - totalVisibles}</p>
+<p>Capes activades però no perceptibles: {totalVisibles - totalPerceptibles}</p>
