@@ -1,11 +1,13 @@
 <script>
 	import ResumCapes from '#lib/components/ResumCapes.svelte';
 	import MapaJapo from '#lib/components/MapaJapo.svelte';
+	import Localitzacions from '#lib/components/Localitzacions.svelte';
 
 	const nomProjecte = 'GeoTrasteja';
 
 	let capes = $state([]);
 	let localitzacions = $state([]);
+	let localitzacioSeleccionada = $state(null);
 
 	let nomsPerceptibles = $derived(capesPerceptibles.map((capaActual) => capaActual.nom));
 
@@ -61,6 +63,11 @@
 		}
 
 		return nomsPerceptibles;
+	}
+
+	function seleccionarLocalitzacio (localitzacio){
+		localitzacioSeleccionada = localitzacio ;
+		
 	}
 
 	async function provarCarregaCapes() {
@@ -128,6 +135,9 @@
 
 <button onclick={provarCarregaCapes} disabled={carregant}>Provar carrega capes</button>
 <button onclick={carregarLocalitzacions}>Provar carrega localitzacions {localitzacions.length}</button>
+
+<Localitzacions localitzacions={localitzacions} />
+
 
 {#if !dadesCarregades && !carregant}
 	<p>Encara no s’han carregat les dades</p>
@@ -214,6 +224,11 @@
 >
 	Restablir totes
 </button>
+
+<Localitzacions
+localitzacions={localitzacions}
+onSeleccionar={seleccionarLocalitzacio}
+/>
 
 <ResumCapes
 	totalCapes={capes.length}
